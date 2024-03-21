@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <title>My First Wordle Game for DGMD E-28</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style type="text/css">
+        @media(min-width: 700px){
+            body,html {
+                font-size: 15px;
+                text-align: center;
+                font-weight: bold;
+                color:#883535;
+                
+            }
+
+            .green_tile {
+                background-color: green;
+                color: black;
+            }
+
+            .yellow_tile {
+                background-color: yellow;
+                color: black;
+            }
+
+            .grey_tile {
+                background-color: gray;
+                color: black;
+            }
+
+
+            h1 {
+                text-align: center;
+            }
+        
+            #wordle_board {
+                display: inline-grid;            
+                grid-template-columns: auto auto auto auto auto;
+                grid-gap: 5px;
+            }
+
+            .square {            
+                border: 2px solid #000;
+                width: 15px;   
+                height: 15px;         
+                padding: 10px;
+                margin-right: 10px;               
+                text-align: center;                   
+                display: inline-block;
+            }
+
+
+            #result {
+                font-size: 25px;
+                margin-top: 15px;
+                color: green;
+            }
+
+            .keyboard {
+                padding: 10px;
+            }
+
+            .disabled-key {
+                background-color: black;
+                color:black;
+            }
+            
+            button {
+                margin: 0.5%;            
+                padding: 0.5%;
+            }
+
+            .debug-mode{
+                opacity: 0.5;
+
+            }
+    }
+      
+      
+
+    </style>
+</head>
+
+<body>
+    <header>
+        <h3>Let's Play Wordle!</h3>       
+    </header>
+    <div>
+    <button id="newGame">New Game</button><button id="debugMode">Debug Mode</button>    
+    </div>
+    <br>
+
+<div id="wordle_board"> 
+   <script>
+        const NUM_SQUARES = 30;
+        const board = document.getElementById('wordle_board');
+        
+        for (i=0; i<NUM_SQUARES; i++){
+        const square = document.createElement('div');
+        square.setAttribute('class','square tile'+i);
+        square.setAttribute('id','sq' +i);
+        board.appendChild(square);
+        }   
+    </script>
+</div>
+
+ 
+    <script>
+        let currentSquareIndex = 0;
+        let answer = 'abide';
+
+        const keyboard = document.createElement('div');
+        keyboard.setAttribute('class','keyboard');
+
+        const keyboardKeys = [
+            'qwertyuiop',
+            'asdfghjkl',
+            'zxcvbnm'                      
+        ];
+
+        //addign classes to the keyboard button components
+    
+        keyboardKeys.forEach((row) => {
+        const rowDiv = document.createElement('div');
+        rowDiv.setAttribute('class', 'k-row');
+
+        row.split('').forEach(key => createButton(key, rowDiv));
+        keyboard.appendChild(rowDiv);
+        });
+
+        const enterRow = document.createElement('div');
+        enterRow.setAttribute('class','k-row');        
+        createButton('SUBMIT', enterRow);
+        keyboard.appendChild(enterRow);
+       
+
+        const deleteRow = document.createElement('div');
+        deleteRow.setAttribute('class','k-row');
+        createButton('DELETE',deleteRow);
+        keyboard.appendChild(deleteRow);
+
+        document.body.appendChild(keyboard);   
+
+        
+    function createButton(key,rowDiv){            
+            const button = document.createElement('button');
+            button.setAttribute('type','button');
+            button.setAttribute('key-color',key);
+                        
+            if(key === 'SUBMIT'){
+                button.setAttribute('class','key-module enter-key');
+            } else {
+                button.setAttribute('class','key-module');
+            }
+                        
+            if(key === 'DELETE'){
+                button.textContent = 'DELETE';
+            } else {
+                button.textContent = key;
+            }
+            
+            //must have picked 5 letters to submit the answer
+
+            button.addEventListener('click', () => {
+                
+                const currentRowIndex = Math.floor((currentSquareIndex - 1)/5);
+                
+            //submit and compare
+                if(key === 'SUBMIT') {                                
+                const guess = findWord(currentRowIndex);                
+                
+                if(guess.length === 5){
+                    const result = checkAnswer(guess);
+                    reportResults(result,guess);
+                    rowComplete(currentRowIndex);
+
+                } else {
+                        alert("must choose 5 letters");
+                    }                
+               
+            //backspace when choosing the wrong letter but can't do it when it has the completed class
+            } else if(key === 'DELETE'){
+                const deleteSquareIndex = currentSquareIndex -1;
+
+                const prevSquare = document.getElementById(`sq${deleteSquareIndex}`);
+                if(prevSquare && !prevSquare.classList.contains('completed')){
+                    prevSquare.textContent = "";
+                    console.log(prevSquare);
+                    currentSquareIndex = deleteSquareIndex;
+                }
+            }               
+                
+            else if(currentSquareIndex<NUM_SQUARES){
+                const nextSquare = document.getElementById(`sq${currentSquareIndex}`);
+                if(nextSquare){
+                    nextSquare.textContent = key;
+                    currentSquareIndex++;
+                }
+            }
+            
+            if(key!== 'SUBMIT'){                 
+                    fillRows();
+                 }
+            });            
+                rowDiv.appendChild(button);
+            }
+        
+        
+    function rowComplete(rowIndex){
+            //finding position in the rows and add the completed class to disable the delete key from going back
+            const startSquareIndex = rowIndex * 5;
+            const endSquareIndex = startSquareIndex + 5;
+
+            for(let i = startSquareIndex; i<endSquareIndex; i++){
+                const square = document.getElementById(`sq${i}`);
+                if(square){
+                    square.classList.add('completed');
+                }
+            }
+            }
+
+        
+
+    function findWord(rowIndex){
+            let word ='';
+            const rowStart = rowIndex*5;
+            const rowEnd = rowStart +5;
+            for(let i = rowStart; i< rowEnd; i++){
+                const square = document.getElementById(`sq${i}`);
+                if(square){
+                    word += square.textContent;
+                }
+            }
+            return word;
+        }
+        
+    function checkWord(guess){            
+            fetch(`https://api.datamuse.com/words?sp=${guess}`)
+            .then(response => response.json())
+            .then(data => {
+                const isExactMatch = data.some(word => word.word.toLowerCase() === guess.toLowerCase());
+
+                if(isExactMatch){
+                    console.log(`${guess} is a valid word.`);
+                checkAnswer(guess);
+                } else {
+                    alert("not a valid word!");                    
+                    console.log("here");
+                }
+            })
+            .catch(error => {
+                console.error('error fetching the word',error)
+            });
+        }
+        
+
+        function rowFilled(row){
+            const guess = row.map(square => square.textContent).join('');
+            console.log(guess);
+            checkWord(guess);
+        }
+
+        function checkAnswer(guess){
+            
+            let result = [];
+            
+            if(guess === answer){
+                alert("got the word correct!!!!!");
+                disableBoard();
+                
+
+
+            } else {
+            
+            for(let i = 0; i< guess.length; i++){
+                if(guess[i] === answer[i]) {
+                    result.push('correct place');
+                    
+                } else if (answer.includes(guess[i])){
+                    result.push('wrong place');
+                    
+                } else {
+                    result.push('not in word');
+                }
+                }
+            
+                return result;     
+        }
+    }
+
+    function newGame (){
+        stopGame();
+    }
+
+   function disableBoard(){
+    const keys = document.querySelectorAll(".key-module");
+    keys.forEach(key => {
+        key.classList.add('disabled-key');
+        key.disabled = true;
+    })
+   }
+
+    function stopGame(){
+        const squares = document.querySelectorAll(".square");
+        
+        squares.forEach (square => {
+        square.classList.remove('completed','green_tile','yellow_tile','grey_tile');
+        square.textContent = "";        
+        });
+        
+        const keys = document.querySelectorAll(".key-module");
+        keys.forEach (key =>{
+        key.classList.remove('disabled-key');
+        key.disabled = false;
+        
+        });
+
+        const debug = document.querySelectorAll(".debug-mode");
+        debug.forEach (key =>{
+        key.classList.remove('debug-mode');
+        key.disabled = false;
+        });
+
+        currentSquareIndex = 0;
+    
+        }
+    function reportResults(result,guess){
+            
+            const startIndex = currentSquareIndex - result.length;
+
+            result.forEach((res,index) => {
+                const squareId = `sq${currentSquareIndex - 5 + index}`;
+                const square = document.getElementById(squareId);
+                
+                if(square){
+                    square.classList.remove('green_tile','yellow_tile','grey_tile');
+                    if(res === 'correct place'){
+                        square.classList.add('green_tile');
+                    }else if (res === 'wrong place'){
+                        square.classList.add('yellow_tile');
+                    }else {
+                        square.classList.add('grey_tile');
+                        disableKey(guess[index]);
+                    }
+
+                    } else {
+                        console.log("square not found: ",squareId)
+                    }
+                    });
+                }
+
+    function disableKey(keyChar){
+            console.log(`disabling key: ${keyChar}`);
+            const keys = document.querySelectorAll(`button[key-color="${keyChar}"]`);
+            console.log(keys);
+
+            keys.forEach(key => {
+                key.classList.add('disabled-key');
+                key.disabled = true;
+                    });
+                }
+                /*
+                    //square.className += `${keyChar}`;
+                } else {
+                console.log("not reading square");
+                }
+            });
+            console.log("here");        
+            alert("this word is not correct!");
+        }*/
+
+    function fillRows(){
+                const rowIndex = Math.floor((currentSquareIndex -1) / 5);
+                const rowStart = rowIndex * 5;
+                const rowEnd = rowStart + 5;
+                const rowSquares = [];
+
+                for(let i = rowStart; i< rowEnd; i++){
+                    const square = document.getElementById(`sq${i}`);
+                    if(square){
+                        rowSquares.push(square);
+                    }
+                }
+                        
+                if(rowSquares.length === 5){
+                    rowFilled(rowSquares);
+                }
+                }
+
+    function debugMode(){
+                
+                const answerWord = answer.split('');
+                const squaresPerRow = 5;
+
+                const allSquares = document.querySelectorAll('.square');
+
+                allSquares.forEach((square, index)=>{
+                    if(index<answerWord.length){
+                        square.textContent = answerWord[index];
+                        square.classList.add('debug-mode');
+                    }
+                })
+                currentSquareIndex =squaresPerRow;
+
+            }
+
+    document.getElementById('newGame').addEventListener('click',newGame);
+    document.getElementById('debugMode').addEventListener('click',debugMode);
+
+    </script>
+     
+</body>

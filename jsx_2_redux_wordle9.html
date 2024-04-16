@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>JSX Wordle</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/react@16.7.0/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16.7.0/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+<style type="text/css">
+ 
+ h3 {
+    color:#883535;                
+}
+
+ body {                
+                text-align: center;
+                font-weight: bold;
+                color:#883535;                
+            }
+
+li {
+    color: black;
+    font-weight: 200;
+    text-align: left;
+}
+#myapp {
+    display: inline-grid;            
+    grid-template-columns: auto auto auto auto auto;
+    grid-gap: 10px;
+     }
+
+.wordle_board {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;   
+}
+
+.wordle_word {
+    display: flex;
+  gap: 15px; 
+  
+}
+
+.square {
+    border: 2px solid #000;
+    width: 30px;   
+    height: 30px;         
+    padding: 15px;              
+    text-align: center;                       
+    font-size: 2rem;  
+    margin:3px;    
+}
+
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 5px; 
+  margin-top: 20px;
+}
+
+.k_row {
+  display: flex;
+  justify-content: center;
+  gap: 3px; 
+}
+
+
+.k_row_special {
+    display: flex;
+    justify-content: center;
+}
+
+.keyboard_button {
+  width: 35px;
+  height: 35px;
+  border: 1px solid #000; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: lightgray; 
+  cursor: pointer;  
+}
+
+.k_row_special .keyboard_button {   
+    width: 80px;    
+    font-weight: bold;
+}
+
+.results p {
+    color: black;
+    font-weight: 300;
+    margin: 1px;
+  
+}
+
+.green_tile {
+  background-color: darkgreen;
+  color:white;
+}
+
+.yellow_tile {
+    background-color: yellow;
+    color: white;
+}
+
+.red_tile {
+    background-color: darkred;
+    color:white;
+}
+
+.grey_tile {
+    background-color: lightgrey;
+}
+  </style>
+</head>
+<body>
+
+<div id="myapp"></div>
+
+<script type="text/babel">
+
+function WordleBoard() {
+    
+    var givenAnswers = [
+        'MIGHT',
+        'FLOOD',
+        'STRAY',
+        '     ',
+        '     '
+    ]
+
+    var testAnswer = "MOODY";
+    var goGreen = testAnswer.split('');
+/*
+    for (let i = 0; i < guess.length; i++) {
+        let currentGuess = theGuesses[i];
+        if(currentGuess !== null){
+            console.log('current guesses:'+currentGuess);
+              let positionAnswer =-1;
+           
+              for(let a=0; a< theAnswers.length; a++){
+                     if(theAnswers[a] === currentGuess){
+                positionAnswer = a;
+                    console.log('the positon answer is:'+ positionAnswer);
+                    break;
+                }
+            }
+        
+        console.log(theGuesses);
+
+        if (positionAnswer !== -1) {
+          correctWrongPos++;
+         console.log("correctLetterwrong:"+correctWrongPos);
+          theAnswers[positionAnswer] = null;
+        } else {
+           // console.log(`wrong letter: ${wrongLetter}`);
+          wrongLetter++;
+              console.log(`wrong lettter: ${wrongLetter}`);
+        }
+      }
+    }
+    */
+
+    return (
+        <div className="wordle_board">
+
+            {givenAnswers.map((word, i) => {
+                var letters = word.split('');
+             
+              var testAnswerArray = Array.from(goGreen);
+              
+                return(
+                <div key={i} className="wordle_word">
+                    {letters.map((letter,i) =>{
+                        
+                        var squareColor="grey_tile";
+
+                        if(letter.trim() == ''){
+                            return (
+                                    <div key={i} className={`square ${squareColor}`}> {letter}
+                                    </div>
+                                );
+                        }
+
+                        if (letter == goGreen[i]){
+                            //console.log(letter[i]);                
+                            squareColor ="green_tile";
+                            
+                        } else {
+
+                                var goYellow = false;
+                                for (let a=0; a<testAnswerArray.length; a++){
+                                    if(letter == goGreen[a]){
+                                        squareColor = "yellow_tile";
+                                        goYellow=true;
+                                        break;
+                                    }
+                           
+                        }
+                        if(goYellow === false){
+                            squareColor="red_tile";
+                        }
+                    }
+
+                            
+
+                        
+                        return (
+                            <div key={i} className={`square ${squareColor}`}>{letter}</div>
+                        );
+                    })}
+                </div>
+            )
+            })}
+            </div>
+        );
+       
+        }
+
+
+
+function Keyboard() {
+    var keyboardButtons = [
+        'qwertyuiop', 
+        'asdfghjkl', 
+        'zxcvbnm'
+    ];
+    
+    var specialButtons = [
+        'SUBMIT', 
+        'DELETE'
+    ];
+
+    return (
+    <div className="keyboard">        
+        {keyboardButtons.map((item,i) => (
+            <div key = {i} className="k_row">
+
+                {item.split('').map((letter,i) => (
+                    <div key={i} className="keyboard_button">{letter}</div>
+                    ))}
+                    </div>
+                ))}
+
+
+           {specialButtons.map((word,i) => (
+            <div key = {i} className="k_row_special">
+                
+                    <div key={i} className="keyboard_button">{word}</div>                    
+                    </div>
+                ))
+                }
+            </div>
+    )
+        }
+
+
+
+        /*
+var wordle_container2 = WordleBoard()   
+var hello3 = <div class="wordle_container">{wordle_container2}</div>
+
+
+    var hello = <h1 id="main">Hello react</h1>
+    var pageTitle = "my page!"
+    var hello2 = <h1 id="main">{pageTitle}</h1>
+
+ReactDOM.render(hello2, myapp);
+*/
+
+
+var myList = <div className="wordle_container">
+            <WordleBoard></WordleBoard>
+            <Keyboard></Keyboard>
+                      
+    </div>
+        
+
+ReactDOM.render(myList, myapp);
+
+
+</script>
+</body>
+</html>
